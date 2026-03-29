@@ -98,7 +98,7 @@ export default function Header({ activeTab, setActiveTab }) {
           </motion.div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1 }}>
-              DailyFlow
+              FlowTrack
             </div>
             {!isMobile && (
               <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>Task Manager</div>
