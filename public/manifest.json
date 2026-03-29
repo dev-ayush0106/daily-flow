@@ -1,0 +1,20 @@
+{
+  "name": "DailyFlow — Task Manager",
+  "short_name": "DailyFlow",
+  "description": "Daily task manager with analytics, streaks, and smart rollover",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en"
+}
