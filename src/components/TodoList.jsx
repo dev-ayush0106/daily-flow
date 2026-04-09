@@ -4,6 +4,7 @@ import { Search, Trash2, Inbox } from 'lucide-react';
 import TodoItem from './TodoItem';
 import AddTodo from './AddTodo';
 import RolloverBanner from './RolloverBanner';
+import ImageTaskExtractor from './ImageTaskExtractor';
 import { CATEGORIES } from '../utils/analytics';
 import { isToday, parseISO } from 'date-fns';
 
@@ -59,7 +60,12 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
 
   return (
     <div>
-      <AddTodo onAdd={onAdd} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <AddTodo onAdd={onAdd} />
+        </div>
+        <ImageTaskExtractor onAdd={onAdd} />
+      </div>
       <RolloverBanner todos={todos} onRollForward={onRollForward} />
 
       {/* Stats strip */}

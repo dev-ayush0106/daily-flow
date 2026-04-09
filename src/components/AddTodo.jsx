@@ -56,7 +56,7 @@ export default function AddTodo({ onAdd }) {
   });
 
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div>
       <AnimatePresence mode="wait">
         {!open ? (
           <motion.button
