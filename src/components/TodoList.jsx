@@ -52,7 +52,7 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
     color: 'var(--text-secondary)',
     borderRadius: 9,
     padding: '7px 10px',
-    fontSize: 12,
+    fontSize: 13,
     outline: 'none',
     cursor: 'pointer',
     flexShrink: 0,
@@ -64,7 +64,9 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
         <div style={{ flex: 1, minWidth: 0 }}>
           <AddTodo onAdd={onAdd} />
         </div>
-        <ImageTaskExtractor onAdd={onAdd} />
+        <div style={{ flexShrink: 0, height: 56 }}>
+          <ImageTaskExtractor onAdd={onAdd} />
+        </div>
       </div>
       <RolloverBanner todos={todos} onRollForward={onRollForward} />
 
@@ -96,7 +98,7 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search tasks..."
-            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 13, width: '100%', minWidth: 0 }}
+            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 14, width: '100%', minWidth: 0 }}
           />
         </div>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>

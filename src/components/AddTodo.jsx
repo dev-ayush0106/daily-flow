@@ -48,7 +48,7 @@ export default function AddTodo({ onAdd }) {
     color,
     borderRadius: 8,
     padding: '6px 10px',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 500,
     cursor: 'pointer',
     outline: 'none',
@@ -68,12 +68,12 @@ export default function AddTodo({ onAdd }) {
             whileHover={{ scale: 1.005, boxShadow: '0 0 24px rgba(124,58,237,0.25)' }}
             whileTap={{ scale: 0.98 }}
             style={{
-              width: '100%', padding: '15px 18px', borderRadius: 14,
+              width: '100%', height: 56, padding: '0 18px', borderRadius: 14,
               border: '1.5px dashed rgba(124,58,237,0.35)',
               background: 'rgba(124,58,237,0.04)',
               color: 'rgba(168,85,247,0.75)',
               display: 'flex', alignItems: 'center', gap: 10,
-              fontSize: 14, fontWeight: 500, cursor: 'pointer',
+              fontSize: 15, fontWeight: 500, cursor: 'pointer',
             }}
           >
             <div style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(124,58,237,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -107,7 +107,7 @@ export default function AddTodo({ onAdd }) {
                   value={text}
                   onChange={e => setText(e.target.value)}
                   placeholder="What needs to be done?"
-                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 14, fontWeight: 500, minWidth: 0 }}
+                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 15, fontWeight: 500, minWidth: 0 }}
                 />
                 <button type="button" onClick={reset} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', padding: 4, borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
                   <X size={15} />
@@ -130,7 +130,7 @@ export default function AddTodo({ onAdd }) {
                     type="date"
                     value={dueDate}
                     onChange={e => setDueDate(e.target.value)}
-                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: dueDate ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 8, padding: '6px 8px', fontSize: 12, outline: 'none', cursor: 'pointer', maxWidth: isMobile ? 120 : 140 }}
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: dueDate ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 8, padding: '6px 8px', fontSize: 13, outline: 'none', cursor: 'pointer', maxWidth: isMobile ? 120 : 140 }}
                   />
                 </div>
 
@@ -141,7 +141,7 @@ export default function AddTodo({ onAdd }) {
                       type="time"
                       value={dueTime}
                       onChange={e => setDueTime(e.target.value)}
-                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: dueTime ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 8, padding: '6px 8px', fontSize: 12, outline: 'none', cursor: 'pointer' }}
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: dueTime ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 8, padding: '6px 8px', fontSize: 13, outline: 'none', cursor: 'pointer' }}
                     />
                   </div>
                 )}
@@ -152,7 +152,7 @@ export default function AddTodo({ onAdd }) {
                   <select
                     value={recurring}
                     onChange={e => setRecurring(e.target.value)}
-                    style={{ background: recurring !== 'none' ? 'rgba(124,58,237,0.12)' : 'var(--surface-2)', border: `1px solid ${recurring !== 'none' ? 'rgba(124,58,237,0.3)' : 'var(--border)'}`, color: recurring !== 'none' ? '#a855f7' : 'var(--text-muted)', borderRadius: 8, padding: '6px 8px', fontSize: 12, cursor: 'pointer', outline: 'none', appearance: 'none' }}
+                    style={{ background: recurring !== 'none' ? 'rgba(124,58,237,0.12)' : 'var(--surface-2)', border: `1px solid ${recurring !== 'none' ? 'rgba(124,58,237,0.3)' : 'var(--border)'}`, color: recurring !== 'none' ? '#a855f7' : 'var(--text-muted)', borderRadius: 8, padding: '6px 8px', fontSize: 13, cursor: 'pointer', outline: 'none', appearance: 'none' }}
                   >
                     {RECURRING.map(r => <option key={r.id} value={r.id} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{r.label}</option>)}
                   </select>
@@ -162,7 +162,7 @@ export default function AddTodo({ onAdd }) {
                 <button
                   type="button"
                   onClick={() => setShowExtra(v => !v)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, background: showExtra ? 'var(--surface-3)' : 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, background: showExtra ? 'var(--surface-3)' : 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 8, padding: '6px 10px', fontSize: 13, cursor: 'pointer', flexShrink: 0 }}
                 >
                   <FileText size={11} /> Notes
                 </button>
@@ -191,11 +191,11 @@ export default function AddTodo({ onAdd }) {
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <motion.button type="button" onClick={reset} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  style={{ padding: '8px 16px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  style={{ padding: '8px 16px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
                   Cancel
                 </motion.button>
                 <motion.button type="submit" disabled={!text.trim()} whileHover={text.trim() ? { scale: 1.02, boxShadow: '0 0 22px rgba(124,58,237,0.45)' } : {}} whileTap={text.trim() ? { scale: 0.97 } : {}}
-                  style={{ padding: '8px 20px', borderRadius: 9, border: 'none', background: text.trim() ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'var(--surface-2)', color: text.trim() ? 'white' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: text.trim() ? 'pointer' : 'not-allowed' }}>
+                  style={{ padding: '8px 20px', borderRadius: 9, border: 'none', background: text.trim() ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'var(--surface-2)', color: text.trim() ? 'white' : 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: text.trim() ? 'pointer' : 'not-allowed' }}>
                   Add Task
                 </motion.button>
               </div>

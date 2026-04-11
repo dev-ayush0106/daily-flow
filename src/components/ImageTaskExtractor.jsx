@@ -91,12 +91,12 @@ export default function ImageTaskExtractor({ onAdd }) {
         onClick={() => setOpen(true)}
         title="Scan task list from image"
         style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '8px 14px', borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          padding: '0 16px', borderRadius: 14, width: '100%', height: '56px',
           border: '1.5px solid rgba(124,58,237,0.3)',
           background: 'rgba(124,58,237,0.07)',
           color: '#a855f7', cursor: 'pointer',
-          fontSize: 13, fontWeight: 500, flexShrink: 0,
+          fontSize: 13, fontWeight: 600,
           whiteSpace: 'nowrap',
         }}
       >

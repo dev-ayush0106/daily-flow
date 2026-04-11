@@ -64,6 +64,7 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;

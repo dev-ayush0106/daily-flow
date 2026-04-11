@@ -1,33 +1,88 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { format, addDays, addWeeks, addMonths } from 'date-fns';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
-const TASKS_KEY   = 'dailytodo_tasks';
-const HISTORY_KEY = 'dailytodo_history';
-
-// Fix 1: unique ID — Date.now() alone collides when called multiple times in
-// the same millisecond (e.g. bulk-adding tasks from the image scanner).
-function genId() {
+// ── ID generation ────────────────────────────────────────────────────────────
+export function genId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function loadFromStorage(key) {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
+// ── DB ↔ JS mappers ──────────────────────────────────────────────────────────
+function rowToTodo(r) {
+  return {
+    id:                r.id,
+    text:              r.text,
+    category:          r.category,
+    priority:          r.priority,
+    dueDate:           r.due_date,
+    dueTime:           r.due_time,
+    recurring:         r.recurring,
+    completed:         r.completed,
+    completedAt:       r.completed_at,
+    createdAt:         r.created_at,
+    notes:             r.notes,
+    rolledForwardFrom: r.rolled_forward_from,
+    rolledAt:          r.rolled_at,
+  };
 }
 
-function saveToHistory(tasks) {
-  const existing    = loadFromStorage(HISTORY_KEY);
-  const existingIds = new Set(existing.map(t => t.id));
-  const newEntries  = tasks
-    .filter(t => t.completed && !existingIds.has(t.id))
-    .map(t => ({ ...t, archivedAt: new Date().toISOString() }));
-  if (newEntries.length > 0)
-    localStorage.setItem(HISTORY_KEY, JSON.stringify([...existing, ...newEntries]));
+function todoToRow(todo, userId) {
+  return {
+    id:                  todo.id,
+    user_id:             userId,
+    text:                todo.text,
+    category:            todo.category,
+    priority:            todo.priority,
+    due_date:            todo.dueDate   ?? null,
+    due_time:            todo.dueTime   ?? null,
+    recurring:           todo.recurring,
+    completed:           todo.completed,
+    completed_at:        todo.completedAt       ?? null,
+    created_at:          todo.createdAt,
+    notes:               todo.notes,
+    rolled_forward_from: todo.rolledForwardFrom ?? null,
+    rolled_at:           todo.rolledAt          ?? null,
+  };
 }
 
-function nextRecurringDate(dueDate, recurring) {
+function rowToHistory(r) {
+  return {
+    id:          r.id,
+    text:        r.text,
+    category:    r.category,
+    priority:    r.priority,
+    dueDate:     r.due_date,
+    dueTime:     r.due_time,
+    recurring:   r.recurring,
+    completed:   r.completed,
+    completedAt: r.completed_at,
+    createdAt:   r.created_at,
+    archivedAt:  r.archived_at,
+    notes:       r.notes,
+  };
+}
+
+function historyToRow(task, userId) {
+  return {
+    id:          task.id,
+    user_id:     userId,
+    text:        task.text,
+    category:    task.category,
+    priority:    task.priority,
+    due_date:    task.dueDate    ?? null,
+    due_time:    task.dueTime    ?? null,
+    recurring:   task.recurring  ?? 'none',
+    completed:   task.completed,
+    completed_at: task.completedAt ?? null,
+    created_at:  task.createdAt,
+    archived_at: task.archivedAt ?? new Date().toISOString(),
+    notes:       task.notes      ?? '',
+  };
+}
+
+// ── recurring helper ─────────────────────────────────────────────────────────
+export function nextRecurringDate(dueDate, recurring) {
   if (!dueDate || !recurring || recurring === 'none') return null;
   const d = new Date(dueDate + 'T00:00:00');
   if (recurring === 'daily')   return format(addDays(d, 1),   'yyyy-MM-dd');
@@ -36,29 +91,52 @@ function nextRecurringDate(dueDate, recurring) {
   return null;
 }
 
+// ── hook ─────────────────────────────────────────────────────────────────────
 export function useTodos() {
-  const [todos,   setTodos]   = useState(() => loadFromStorage(TASKS_KEY));
-  const [history, setHistory] = useState(() => loadFromStorage(HISTORY_KEY));
+  const { user } = useAuth();
+  const [todos,       setTodos]       = useState([]);
+  const [history,     setHistory]     = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  // Fix 2: keep a ref that always mirrors the latest todos so that
-  // deleteTodo / clearCompleted can read the current list *outside* the
-  // setTodos updater function.  React StrictMode intentionally calls state
-  // updater functions twice to detect side-effects — moving saveToHistory /
-  // refreshHistory outside the updater ensures they run exactly once.
-  const todosRef = useRef(todos);
-  useEffect(() => { todosRef.current = todos; }, [todos]);
+  // Mirror latest todos into a ref so callbacks can read current state
+  // without declaring todos as a dependency (avoids stale-closure issues
+  // and prevents Supabase calls from re-creating on every render).
+  const todosRef   = useRef(todos);
+  const historyRef = useRef(history);
+  useEffect(() => { todosRef.current   = todos;   }, [todos]);
+  useEffect(() => { historyRef.current = history; }, [history]);
 
+  // ── load data when user changes ──────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem(TASKS_KEY, JSON.stringify(todos));
-  }, [todos]);
+    if (!user) {
+      setTodos([]);
+      setHistory([]);
+      setDataLoading(false);
+      return;
+    }
 
-  const refreshHistory = useCallback(() => {
-    setHistory(loadFromStorage(HISTORY_KEY));
-  }, []);
+    setDataLoading(true);
+    Promise.all([
+      supabase.from('todos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase.from('todo_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('archived_at', { ascending: false }),
+    ]).then(([{ data: td }, { data: hd }]) => {
+      setTodos((td   || []).map(rowToTodo));
+      setHistory((hd || []).map(rowToHistory));
+      setDataLoading(false);
+    });
+  }, [user]);
 
-  const addTodo = useCallback((todo) => {
+  // ── addTodo ──────────────────────────────────────────────────────────────
+  const addTodo = useCallback(async (todo) => {
+    if (!user) return;
     const newTodo = {
-      id:          genId(),           // unique even when called in a tight loop
+      id:          genId(),
       text:        todo.text,
       category:    todo.category  || 'personal',
       priority:    todo.priority  || 'medium',
@@ -68,90 +146,162 @@ export function useTodos() {
       completed:   false,
       completedAt: null,
       createdAt:   new Date().toISOString(),
-      notes:       todo.notes || '',
+      notes:       todo.notes     || '',
     };
     setTodos(prev => [newTodo, ...prev]);
+    await supabase.from('todos').insert(todoToRow(newTodo, user.id));
     return newTodo;
-  }, []);
+  }, [user]);
 
-  const toggleTodo = useCallback((id) => {
-    setTodos(prev => {
-      const todo = prev.find(t => t.id === id);
-      if (!todo) return prev;
+  // ── toggleTodo ───────────────────────────────────────────────────────────
+  const toggleTodo = useCallback(async (id) => {
+    if (!user) return;
 
-      const completing  = !todo.completed;
-      const updatedTodo = {
-        ...todo,
-        completed:   completing,
-        completedAt: completing ? new Date().toISOString() : null,
-      };
+    const prev     = todosRef.current;
+    const todo     = prev.find(t => t.id === id);
+    if (!todo) return;
 
-      const updated = prev.map(t => t.id === id ? updatedTodo : t);
+    const completing  = !todo.completed;
+    const updatedTodo = {
+      ...todo,
+      completed:   completing,
+      completedAt: completing ? new Date().toISOString() : null,
+    };
 
-      if (completing && todo.recurring && todo.recurring !== 'none') {
-        const nextDate = nextRecurringDate(todo.dueDate, todo.recurring);
-        if (nextDate) {
-          const nextTask = {
-            id:          genId(),     // unique recurring task id
-            text:        todo.text,
-            category:    todo.category,
-            priority:    todo.priority,
-            dueDate:     nextDate,
-            dueTime:     todo.dueTime,
-            recurring:   todo.recurring,
-            completed:   false,
-            completedAt: null,
-            createdAt:   new Date().toISOString(),
-            notes:       todo.notes,
-          };
-          return [nextTask, ...updated];
-        }
+    let newTodos  = prev.map(t => t.id === id ? updatedTodo : t);
+    let nextTask  = null;
+
+    if (completing && todo.recurring && todo.recurring !== 'none') {
+      const nextDate = nextRecurringDate(todo.dueDate, todo.recurring);
+      if (nextDate) {
+        nextTask = {
+          id:          genId(),
+          text:        todo.text,
+          category:    todo.category,
+          priority:    todo.priority,
+          dueDate:     nextDate,
+          dueTime:     todo.dueTime,
+          recurring:   todo.recurring,
+          completed:   false,
+          completedAt: null,
+          createdAt:   new Date().toISOString(),
+          notes:       todo.notes,
+        };
+        newTodos = [nextTask, ...newTodos];
       }
-      return updated;
-    });
-  }, []);
+    }
 
-  const deleteTodo = useCallback((id) => {
-    // Read the task BEFORE the updater so side-effects run exactly once
+    setTodos(newTodos);
+
+    await supabase.from('todos')
+      .update({ completed: updatedTodo.completed, completed_at: updatedTodo.completedAt })
+      .eq('id', id).eq('user_id', user.id);
+
+    if (nextTask) {
+      await supabase.from('todos').insert(todoToRow(nextTask, user.id));
+    }
+  }, [user]);
+
+  // ── deleteTodo ───────────────────────────────────────────────────────────
+  const deleteTodo = useCallback(async (id) => {
+    if (!user) return;
     const task = todosRef.current.find(t => t.id === id);
-    if (task?.completed) saveToHistory([task]);
+
     setTodos(prev => prev.filter(t => t.id !== id));
-    refreshHistory();
-  }, [refreshHistory]);
+    await supabase.from('todos').delete().eq('id', id).eq('user_id', user.id);
 
-  const editTodo = useCallback((id, updates) => {
+    if (task?.completed) {
+      const alreadyInHistory = historyRef.current.some(h => h.id === id);
+      if (!alreadyInHistory) {
+        const entry = { ...task, archivedAt: new Date().toISOString() };
+        await supabase.from('todo_history').insert(historyToRow(entry, user.id));
+        setHistory(prev => [entry, ...prev]);
+      }
+    }
+  }, [user]);
+
+  // ── editTodo ─────────────────────────────────────────────────────────────
+  const editTodo = useCallback(async (id, updates) => {
+    if (!user) return;
     setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  }, []);
 
-  const clearCompleted = useCallback(() => {
-    // Read completed tasks BEFORE the updater for the same reason
+    // Map camelCase → snake_case for the columns that editTodo may touch
+    const colMap = { text: 'text', notes: 'notes', category: 'category', priority: 'priority', dueDate: 'due_date', dueTime: 'due_time', recurring: 'recurring' };
+    const dbUpdates = {};
+    Object.entries(updates).forEach(([k, v]) => { if (colMap[k]) dbUpdates[colMap[k]] = v; });
+
+    if (Object.keys(dbUpdates).length > 0) {
+      await supabase.from('todos').update(dbUpdates).eq('id', id).eq('user_id', user.id);
+    }
+  }, [user]);
+
+  // ── clearCompleted ───────────────────────────────────────────────────────
+  const clearCompleted = useCallback(async () => {
+    if (!user) return;
     const completed = todosRef.current.filter(t => t.completed);
-    if (completed.length > 0) saveToHistory(completed);
-    setTodos(prev => prev.filter(t => !t.completed));
-    if (completed.length > 0) refreshHistory();
-  }, [refreshHistory]);
+    if (completed.length === 0) return;
 
-  const rollForward = useCallback((ids) => {
+    setTodos(prev => prev.filter(t => !t.completed));
+    const ids = completed.map(t => t.id);
+    await supabase.from('todos').delete().in('id', ids).eq('user_id', user.id);
+
+    // Archive those not already in history
+    const existingIds = new Set(historyRef.current.map(h => h.id));
+    const toArchive   = completed.filter(t => !existingIds.has(t.id));
+    if (toArchive.length > 0) {
+      const now     = new Date().toISOString();
+      const entries = toArchive.map(t => ({ ...t, archivedAt: now }));
+      await supabase.from('todo_history').insert(entries.map(e => historyToRow(e, user.id)));
+      setHistory(prev => [...entries, ...prev]);
+    }
+  }, [user]);
+
+  // ── rollForward ──────────────────────────────────────────────────────────
+  const rollForward = useCallback(async (ids) => {
+    if (!user) return;
     const todayISO  = new Date().toISOString();
     const todayDate = format(new Date(), 'yyyy-MM-dd');
-    setTodos(prev =>
-      prev.map(todo => {
-        if (!ids.includes(todo.id)) return todo;
-        return {
-          ...todo,
-          createdAt:         todayISO,
-          dueDate:           (todo.dueDate && todo.dueDate < todayDate) ? todayDate : todo.dueDate,
-          rolledForwardFrom: todo.rolledForwardFrom || todo.createdAt,
-          rolledAt:          todayISO,
-        };
-      })
-    );
-  }, []);
 
-  const clearHistory = useCallback(() => {
-    localStorage.removeItem(HISTORY_KEY);
+    const newTodos = todosRef.current.map(todo => {
+      if (!ids.includes(todo.id)) return todo;
+      return {
+        ...todo,
+        createdAt:         todayISO,
+        dueDate:           (todo.dueDate && todo.dueDate < todayDate) ? todayDate : todo.dueDate,
+        rolledForwardFrom: todo.rolledForwardFrom || todo.createdAt,
+        rolledAt:          todayISO,
+      };
+    });
+    setTodos(newTodos);
+
+    await Promise.all(ids.map(id => {
+      const t = newTodos.find(x => x.id === id);
+      return supabase.from('todos').update({
+        created_at:          t.createdAt,
+        due_date:            t.dueDate,
+        rolled_forward_from: t.rolledForwardFrom,
+        rolled_at:           t.rolledAt,
+      }).eq('id', id).eq('user_id', user.id);
+    }));
+  }, [user]);
+
+  // ── clearHistory ─────────────────────────────────────────────────────────
+  const clearHistory = useCallback(async () => {
+    if (!user) return;
+    await supabase.from('todo_history').delete().eq('user_id', user.id);
     setHistory([]);
-  }, []);
+  }, [user]);
 
-  return { todos, history, addTodo, toggleTodo, deleteTodo, editTodo, clearCompleted, rollForward, clearHistory };
+  return {
+    todos,
+    history,
+    dataLoading,
+    addTodo,
+    toggleTodo,
+    deleteTodo,
+    editTodo,
+    clearCompleted,
+    rollForward,
+    clearHistory,
+  };
 }

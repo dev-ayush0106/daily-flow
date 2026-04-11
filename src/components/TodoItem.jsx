@@ -102,28 +102,28 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit, onRollForwa
             <>
               {/* Title + badges */}
               <div className="todo-badges">
-                <span style={{ fontSize: 14, fontWeight: 500, color: todo.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: todo.completed ? 'line-through' : 'none', lineHeight: 1.4, marginRight: 2 }}>
+                <span style={{ fontSize: 15, fontWeight: 500, color: todo.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: todo.completed ? 'line-through' : 'none', lineHeight: 1.4, marginRight: 2 }}>
                   {todo.text}
                 </span>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: `${cat.color}18`, color: cat.color, border: `1px solid ${cat.color}30`, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: `${cat.color}18`, color: cat.color, border: `1px solid ${cat.color}30`, whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {cat.icon} {cat.label}
                 </span>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: `${pri.color}18`, color: pri.color, border: `1px solid ${pri.color}30`, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: `${pri.color}18`, color: pri.color, border: `1px solid ${pri.color}30`, whiteSpace: 'nowrap', flexShrink: 0 }}>
                   ● {pri.label}
                 </span>
                 {todo.recurring && todo.recurring !== 'none' && (
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: 'rgba(124,58,237,0.15)', color: '#a855f7', border: '1px solid rgba(124,58,237,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(124,58,237,0.15)', color: '#a855f7', border: '1px solid rgba(124,58,237,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     ↻ {RECURRING_LABEL[todo.recurring]}
                   </span>
                 )}
                 {isOverdue && (
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: 'rgba(239,68,68,0.14)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>Overdue</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(239,68,68,0.14)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>Overdue</span>
                 )}
                 {isDueToday && !isOverdue && (
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: 'rgba(245,158,11,0.14)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>Due Today</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(245,158,11,0.14)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>Due Today</span>
                 )}
                 {isStale && (
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: 'rgba(251,146,60,0.12)', color: '#fb923c', border: '1px solid rgba(251,146,60,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(251,146,60,0.12)', color: '#fb923c', border: '1px solid rgba(251,146,60,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     ↻ {format(parseISO(todo.createdAt), 'MMM d')}
                   </span>
                 )}
@@ -137,20 +137,20 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit, onRollForwa
               {/* Meta row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
                 {todo.dueDate && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: isOverdue ? '#ef4444' : 'var(--text-muted)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: isOverdue ? '#ef4444' : 'var(--text-muted)' }}>
                     <Calendar size={10} />
                     {format(new Date(todo.dueDate), 'MMM d')}
                     {todo.dueTime && <><Clock size={10} style={{ marginLeft: 3 }} />{todo.dueTime}</>}
                   </span>
                 )}
                 {todo.completedAt && (
-                  <span style={{ fontSize: 11, color: '#10b981bb', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <span style={{ fontSize: 12, color: '#10b981bb', display: 'flex', alignItems: 'center', gap: 3 }}>
                     <Check size={10} />
                     {format(parseISO(todo.completedAt), 'MMM d, h:mm a')}
                   </span>
                 )}
                 {todo.notes && (
-                  <button onClick={() => setExpanded(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <button onClick={() => setExpanded(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                     <FileText size={10} />Notes{expanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                   </button>
                 )}

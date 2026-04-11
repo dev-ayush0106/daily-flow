@@ -24,7 +24,7 @@ export async function extractTasksFromImage(imageDataUrl, onProgress) {
  * Splits OCR text into clean task strings.
  * Strips bullets, dashes, checkboxes, numbering, and blank lines.
  */
-function parseLines(text) {
+export function parseLines(text) {
   return text
     .split('\n')
     .map(line =>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckSquare, BarChart2, Zap, Sun, Moon, Bell, BellOff, X } from 'lucide-react';
+import { CheckSquare, BarChart2, Zap, Sun, Moon, Bell, BellOff, X, LogOut } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useBreakpoints } from '../hooks/useMediaQuery';
 import { getPermissionState, requestPermission } from '../utils/notifications';
+import { useAuth } from '../context/AuthContext';
 
 function NotifPanel({ onClose }) {
   const [perm, setPerm] = useState(getPermissionState());
@@ -66,8 +67,12 @@ function NotifPanel({ onClose }) {
 export default function Header({ activeTab, setActiveTab }) {
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useBreakpoints();
+  const { user, signOut } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
   const perm = getPermissionState();
+
+  // Derive initials from email for the avatar
+  const initials = user?.email?.[0]?.toUpperCase() ?? '?';
 
   return (
     <motion.header
@@ -172,6 +177,34 @@ export default function Header({ activeTab, setActiveTab }) {
               {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </motion.div>
           </button>
+
+          {/* User avatar + logout */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div
+                title={user.email}
+                style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700, color: 'white', flexShrink: 0,
+                  boxShadow: '0 0 10px rgba(124,58,237,0.4)',
+                  cursor: 'default',
+                }}
+              >
+                {initials}
+              </div>
+              <motion.button
+                onClick={signOut}
+                whileHover={{ scale: 1.1, color: '#ef4444' }}
+                whileTap={{ scale: 0.9 }}
+                title="Sign out"
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }}
+              >
+                <LogOut size={15} />
+              </motion.button>
+            </div>
+          )}
         </div>
       </div>
     </motion.header>
