@@ -6,6 +6,7 @@ import TodoList from './components/TodoList';
 import Analytics from './components/Analytics';
 import AuthPage from './components/AuthPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useTodos } from './hooks/useTodos';
 import { useAuth } from './context/AuthContext';
 import { useBreakpoints } from './hooks/useMediaQuery';
@@ -39,24 +40,6 @@ function AppShell() {
 
   const activeTodos = todos.filter(t => !t.completed);
 
-  if (dataLoading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-        <BgOrbs />
-        <motion.div
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}
-        >
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#7c3aed,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(124,58,237,0.5)' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading your tasks…</span>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ minHeight: '100dvh', position: 'relative', background: 'var(--bg-primary)', transition: 'background 0.3s' }}>
       <BgOrbs />
@@ -83,13 +66,16 @@ function AppShell() {
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                     style={{ fontSize: 13, color: 'var(--text-muted)' }}
                   >
-                    {activeTodos.length === 0
-                      ? todos.length > 0 ? '🎉 All tasks completed!' : 'No tasks yet — add your first task!'
-                      : `${activeTodos.length} task${activeTodos.length !== 1 ? 's' : ''} remaining`}
+                    {dataLoading
+                      ? 'Loading your tasks…'
+                      : activeTodos.length === 0
+                        ? todos.length > 0 ? '🎉 All tasks completed!' : 'No tasks yet — add your first task!'
+                        : `${activeTodos.length} task${activeTodos.length !== 1 ? 's' : ''} remaining`}
                   </motion.p>
                 </div>
                 <TodoList
                   todos={todos}
+                  dataLoading={dataLoading}
                   onAdd={addTodo}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
@@ -132,7 +118,7 @@ export default function App() {
   if (loading) return null;
 
   // User clicked the password-reset email link — show reset form first
-  if (isRecovery) return <ResetPasswordPage />;
+  if (isRecovery) return <ErrorBoundary><ResetPasswordPage /></ErrorBoundary>;
 
-  return user ? <AppShell /> : <AuthPage />;
+  return <ErrorBoundary>{user ? <AppShell /> : <AuthPage />}</ErrorBoundary>;
 }

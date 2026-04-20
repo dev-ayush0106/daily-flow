@@ -8,7 +8,23 @@ import ImageTaskExtractor from './ImageTaskExtractor';
 import { CATEGORIES } from '../utils/analytics';
 import { isToday, parseISO } from 'date-fns';
 
-export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onClearCompleted, onRollForward }) {
+const SKELETON_WIDTHS = ['72%', '55%', '80%', '62%'];
+
+function SkeletonCard({ index }) {
+  const pulse = { animate: { opacity: [0.4, 0.9, 0.4] }, transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.12 } };
+  return (
+    <div style={{ background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border)', padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <motion.div {...pulse} style={{ width: 20, height: 20, borderRadius: 6, background: 'var(--surface-1)', flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <motion.div {...pulse} style={{ height: 13, borderRadius: 6, background: 'var(--surface-1)', marginBottom: 8, width: SKELETON_WIDTHS[index] }} />
+        <motion.div {...pulse} style={{ height: 10, borderRadius: 6, background: 'var(--surface-1)', width: '38%' }} />
+      </div>
+      <motion.div {...pulse} style={{ width: 52, height: 22, borderRadius: 7, background: 'var(--surface-1)', flexShrink: 0 }} />
+    </div>
+  );
+}
+
+export default function TodoList({ todos, dataLoading, onAdd, onToggle, onDelete, onEdit, onClearCompleted, onRollForward }) {
   const [search,       setSearch]       = useState('');
   const [filterCat,    setFilterCat]    = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -72,23 +88,34 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
 
       {/* Stats strip */}
       <div className="stats-strip" style={{ marginBottom: 16 }}>
-        {[
-          { label: 'Total',  value: todos.length,    color: '#a855f7' },
-          { label: 'Active', value: active,           color: '#3b82f6' },
-          { label: 'Done',   value: completedCount,   color: '#10b981' },
-        ].map(s => (
-          <motion.div key={s.label} whileHover={{ y: -2 }} style={{
-            flex: 1, background: 'var(--bg-card)', borderRadius: 11, padding: '10px 14px',
-            border: '1px solid var(--border)', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{s.label}</div>
-          </motion.div>
-        ))}
+        {dataLoading
+          ? [0, 1, 2].map(i => {
+              const pulse = { animate: { opacity: [0.4, 0.9, 0.4] }, transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.12 } };
+              return (
+                <div key={i} style={{ flex: 1, background: 'var(--bg-card)', borderRadius: 11, padding: '10px 14px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                  <motion.div {...pulse} style={{ height: 20, borderRadius: 6, background: 'var(--surface-1)', width: '40%', margin: '0 auto 6px' }} />
+                  <motion.div {...pulse} style={{ height: 10, borderRadius: 5, background: 'var(--surface-1)', width: '55%', margin: '0 auto' }} />
+                </div>
+              );
+            })
+          : [
+              { label: 'Total',  value: todos.length,  color: '#a855f7' },
+              { label: 'Active', value: active,         color: '#3b82f6' },
+              { label: 'Done',   value: completedCount, color: '#10b981' },
+            ].map(s => (
+              <motion.div key={s.label} whileHover={{ y: -2 }} style={{
+                flex: 1, background: 'var(--bg-card)', borderRadius: 11, padding: '10px 14px',
+                border: '1px solid var(--border)', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{s.label}</div>
+              </motion.div>
+            ))
+        }
       </div>
 
       {/* Filters */}
-      <div className="filter-row">
+      <div className="filter-row" style={dataLoading ? { opacity: 0, pointerEvents: 'none' } : {}}>
         <div className="filter-search" style={{
           flex: 1, minWidth: 140, display: 'flex', alignItems: 'center', gap: 7,
           background: 'var(--bg-card)', borderRadius: 9, border: '1px solid var(--border)', padding: '7px 11px',
@@ -119,7 +146,7 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
       </div>
 
       {/* Clear completed */}
-      {completedCount > 0 && (
+      {!dataLoading && completedCount > 0 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
           <button
             onClick={onClearCompleted}
@@ -131,8 +158,9 @@ export default function TodoList({ todos, onAdd, onToggle, onDelete, onEdit, onC
       )}
 
       {/* List */}
+      {dataLoading && SKELETON_WIDTHS.map((_, i) => <SkeletonCard key={i} index={i} />)}
       <AnimatePresence mode="popLayout">
-        {filtered.length === 0 ? (
+        {!dataLoading && filtered.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, y: 20 }}
