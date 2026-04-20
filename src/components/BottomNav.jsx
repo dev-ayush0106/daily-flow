@@ -59,7 +59,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
                 />
               )}
             </div>
-            <span style={{ fontSize: 10, fontWeight: active ? 600 : 400 }}>{label}</span>
+            <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, textAlign: 'center', width: '100%' }}>{label}</span>
           </motion.button>
         );
       })}
