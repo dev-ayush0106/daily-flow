@@ -28,7 +28,7 @@ export default function TodoList({ todos, dataLoading, onAdd, onToggle, onDelete
   const [search,       setSearch]       = useState('');
   const [filterCat,    setFilterCat]    = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy,       setSortBy]       = useState('created');
+  const [sortBy,       setSortBy]       = useState('smart');
 
   const filtered = useMemo(() => {
     let list = [...todos];
@@ -37,12 +37,32 @@ export default function TodoList({ todos, dataLoading, onAdd, onToggle, onDelete
       const q = search.toLowerCase();
       list = list.filter(t => t.text.toLowerCase().includes(q) || (t.notes || '').toLowerCase().includes(q));
     }
-    if (filterCat !== 'all')      list = list.filter(t => t.category === filterCat);
-    if (filterStatus === 'active')    list = list.filter(t => !t.completed);
-    else if (filterStatus === 'completed') list = list.filter(t => t.completed);
-    else if (filterStatus === 'today')     list = list.filter(t => t.createdAt && isToday(parseISO(t.createdAt)));
+    if (filterCat !== 'all')           list = list.filter(t => t.category === filterCat);
+    if (filterStatus === 'active')     list = list.filter(t => !t.completed);
+    else if (filterStatus === 'completed') list = list.filter(t =>  t.completed);
+    else if (filterStatus === 'today') list = list.filter(t => t.createdAt && isToday(parseISO(t.createdAt)));
 
     list.sort((a, b) => {
+      if (sortBy === 'smart') {
+        // Completed tasks always sink to the bottom
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+
+        // Both have due dates — sort ascending by date, then by time
+        if (a.dueDate && b.dueDate) {
+          const dateDiff = a.dueDate.localeCompare(b.dueDate);
+          if (dateDiff !== 0) return dateDiff;
+          if (a.dueTime && b.dueTime) return a.dueTime.localeCompare(b.dueTime);
+          if (a.dueTime) return -1;
+          if (b.dueTime) return 1;
+          return 0;
+        }
+        // Tasks with a due date float above those without
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
+        // No due date on either — newest created first
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+
       if (sortBy === 'priority') {
         const o = { high: 0, medium: 1, low: 2 };
         return o[a.priority] - o[b.priority];
@@ -53,6 +73,7 @@ export default function TodoList({ todos, dataLoading, onAdd, onToggle, onDelete
         if (!b.dueDate) return -1;
         return new Date(a.dueDate) - new Date(b.dueDate);
       }
+      // 'created' — newest first
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
@@ -139,6 +160,7 @@ export default function TodoList({ todos, dataLoading, onAdd, onToggle, onDelete
           {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
         </select>
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
+          <option value="smart">Smart (by time)</option>
           <option value="created">Newest First</option>
           <option value="priority">By Priority</option>
           <option value="due">By Due Date</option>
